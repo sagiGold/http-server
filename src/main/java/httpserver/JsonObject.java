@@ -1,18 +1,19 @@
-package JsonModels;
+package httpserver;
 
-public class IndependentJSON {
+public class JsonObject {
     private int[] arguments;
     private String operation;
 
-    public IndependentJSON(int[] arguments, String operation) {
+    public JsonObject(int[] arguments, String operation) {
         this.arguments = arguments;
-        this.operation = operation.toLowerCase();
+        if (operation != null) {
+            this.operation = operation.toLowerCase();
+        }
     }
 
     public int[] getArguments() {
         return arguments;
     }
-
     public String getOperation() {
         return operation;
     }
