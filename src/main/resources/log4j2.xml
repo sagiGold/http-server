@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" monitorInterval="5">
+
+    <Appenders>
+
+
+        <File name="INDEPENDENT" fileName="logs/independent.log" append="false">
+            <PatternLayout>
+                <Pattern>%d{dd-MM-yyyy HH:mm:ss.SSS} %p: %msg%n</Pattern>
+            </PatternLayout>
+        </File>
+
+        <File name="STACK" fileName="logs/stack.log" append="false">
+            <PatternLayout>
+                <Pattern>%d{dd-MM-yyyy HH:mm:ss.SSS} %p: %msg%n</Pattern>
+            </PatternLayout>
+        </File>
+
+        <File name="REQUESTS" fileName="logs/requests.log" append="false">
+            <PatternLayout>
+                <Pattern>%d{dd-MM-yyyy HH:mm:ss.SSS} %p: %msg%n</Pattern>
+            </PatternLayout>
+        </File>
+        <Console name="Console" target="SYSTEM_OUT">
+            <Pattern>%d{dd-MM-yyyy HH:mm:ss.SSS} %p: %msg%n</Pattern>
+        </Console>
+
+        <Async name="Async">
+            <AppenderRef ref="Console"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+
+        <logger name="request-logger" level="INFO">
+            <appender-ref ref="REQUESTS" />
+            <appender-ref ref="STDOUT" />
+        </logger>
+
+        <logger name="stack-logger" level="INFO" additivity="false">
+            <appender-ref ref="STACK" />
+        </logger>
+
+        <logger name="independent-logger" level="DEBUG">
+            <appender-ref ref="INDEPENDENT"/>
+        </logger>
+    </Loggers>
+
+</Configuration>

@@ -6,6 +6,8 @@ import httpserver.exceptions.TooManyArgumentsException;
 import httpserver.exceptions.NegativeFactorialException;
 import httpserver.exceptions.NotEnoughArgumentsException;
 
+import httpserver.loggers.LoggersWrapper;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,14 +15,28 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import static org.springframework.http.HttpStatus.CONFLICT;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Objects;
 
 @RestController
 public class IndependentCalc {
+    private long startingTime;
+    private final String serverErrMsg = "Server encountered an error ! message: ";
+    private final Logger indLogger;
+    private final LoggersWrapper requestLogger;
+
+    public IndependentCalc(LoggersWrapper LoggerWrapper) {
+        this.requestLogger = LoggerWrapper;
+        indLogger = requestLogger.getLogger("independent-logger");
+    }
+
     @PostMapping(value = "/independent/calculate", consumes = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity Calculate(@RequestBody JsonObject jsonObj) {
+        startingTime = System.currentTimeMillis();
+        requestLogger.handleRequest("/independent/calculate", "POST");
+
         int res = 0;
         Map<String,Object> resultObj = new HashMap<>();
 
@@ -65,18 +81,34 @@ public class IndependentCalc {
                     }
                     break;
                 default:
-                    resultObj.put("error-message", "Error: unknown operation: " + jsonObj.getOperation());
+                    String errMsg = "Error: unknown operation: " + jsonObj.getOperation();
+                    indLogger.error(serverErrMsg + errMsg + " | request #" + (requestLogger.getNumOfRequests()));
+                    resultObj.put("error-message", errMsg);
                     return ResponseEntity.status(CONFLICT).body(resultObj);
             }
         } catch (NotEnoughArgumentsException e) {
-            return ResponseEntity.status(CONFLICT).body("Error: Not enough arguments to perform the operation " + e.getMessage());
+            String errMsg = "Error: Not enough arguments to perform the operation " + e.getMessage();
+            indLogger.error(serverErrMsg + errMsg + " | request #" + (requestLogger.getNumOfRequests()));
+            resultObj.put("error-message", errMsg);
+            return ResponseEntity.status(CONFLICT).body(resultObj);
         } catch (TooManyArgumentsException e) {
-            return ResponseEntity.status(CONFLICT).body("Error: Too many arguments to perform the operation " + e.getMessage());
+            String errMsg = "Error: Too many arguments to perform the operation " + e.getMessage();
+            indLogger.error(serverErrMsg + errMsg + " | request #" + (requestLogger.getNumOfRequests()));
+            resultObj.put("error-message", errMsg);
+            return ResponseEntity.status(CONFLICT).body(resultObj);
         } catch (NegativeFactorialException | DivisionByZeroException e) {
-            return ResponseEntity.status(CONFLICT).body(e.getMessage());
+            indLogger.error(serverErrMsg + e.getMessage() + " | request #" + (requestLogger.getNumOfRequests()));
+            resultObj.put("error-message", e.getMessage());
+            return ResponseEntity.status(CONFLICT).body(resultObj);
         }
 
         resultObj.put("result", res);
+        requestLogger.handleRequestDuration(System.currentTimeMillis() - startingTime);
+        indLogger.info("Performing operation " + jsonObj.getOperation() + ". Result is " + res + " | request #" + (requestLogger.getNumOfRequests()));
+        indLogger.debug("Performing operation: " + jsonObj.getOperation()
+                + "(" + Arrays.toString(jsonObj.getArguments()).replace("[", "").replace("]", "").replace(" ","")
+                + ") = " + res + " | request #" + (requestLogger.getNumOfRequests()));
+
         return ResponseEntity.ok(resultObj);
     }
 
